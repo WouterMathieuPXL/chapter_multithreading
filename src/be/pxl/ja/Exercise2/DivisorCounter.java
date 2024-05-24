@@ -2,12 +2,18 @@ package be.pxl.ja.Exercise2;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Comparator;
 
-public class DivisorCounter implements Runnable {
-    private static int number;
-    private static int numberOfDivisors;
+public class DivisorCounter extends Thread {
+    private int number;
+    private int numberOfDivisors;
     private final int min;
     private final int max;
+
+    public int getNumber() {
+        return number;
+    }
 
     public DivisorCounter(int min, int max) {
         this.min = min;
@@ -18,27 +24,31 @@ public class DivisorCounter implements Runnable {
         LocalDateTime start = LocalDateTime.now();
 
         int min = 1;
-        int max = 100000;
-        int numberOfThreads = 6;
+        int max = 10000;
+        int numberOfThreads = 1;
         int step = max / numberOfThreads;
-        Thread[] threads = new Thread[numberOfThreads];
+        DivisorCounter[] counters = new DivisorCounter[numberOfThreads];
 
         for (int i = 0; i < numberOfThreads; i++) {
-            threads[i] = new Thread(new DivisorCounter(i * step + 1, (i + 1) * step));
-            threads[i].start();
+            counters[i] = new DivisorCounter(i * step + 1, (i + 1) * step);
+            counters[i].start();
         }
-        for (Thread thread : threads) {
+        for (DivisorCounter counter : counters) {
             try {
-                thread.join();
+                counter.join();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
         LocalDateTime end = LocalDateTime.now();
         int timeDifference = (int) Duration.between(start, end).toMillis();
+
+        Comparator comparator = Comparator.comparingInt(DivisorCounter::getNumber);
+        DivisorCounter counter = (DivisorCounter) Arrays.stream(counters).min(comparator).get();
+
         System.out.println("Range [" + min + "-" + max + "]");
-        System.out.println("Getal: " + DivisorCounter.getNumber());
-        System.out.println("Aantal delers: " + DivisorCounter.getNumberOfDivisors());
+        System.out.println("Getal: " + counter.number);
+        System.out.println("Aantal delers: " + counter.numberOfDivisors);
         System.out.println("Tijd: " + timeDifference + " ms");
     }
 
@@ -56,14 +66,6 @@ public class DivisorCounter implements Runnable {
             }
         }
         return count;
-    }
-
-    public static int getNumber() {
-        return number;
-    }
-
-    public static int getNumberOfDivisors() {
-        return numberOfDivisors;
     }
 
     @Override
